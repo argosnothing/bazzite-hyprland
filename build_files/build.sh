@@ -37,7 +37,6 @@ COMMON_PKGS=(
   hyprland-autoname-workspaces
   hyprshot
   satty
-  aylurs-gtk-shell
   aylurs-gtk-shell2
   hyprpanel
   cliphist

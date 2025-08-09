@@ -1,24 +1,72 @@
 #!/bin/bash
-
 set -ouex pipefail
 
-### Install packages
+# Choose: stable or git
+VARIANT=stable   # change to "git" if you want hyprland-git + plugins-git + waybar-git, eww-git, etc.
 
-# Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
-# List of rpmfusion packages can be found here:
-# https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
+# Enable COPR
+dnf5 -y copr enable solopasha/hyprland
 
-# this installs a package from fedora repos
-dnf5 install -y tmux 
+if [[ "$VARIANT" == "git" ]]; then
+  HYPR_PKGS=(
+    hyprland-git
+    hyprland-plugins-git
+    waybar-git
+    eww-git
+  )
+else
+  HYPR_PKGS=(
+    hyprland
+    hyprland-plugins
+    waybar            # use Fedora’s stable waybar; change to waybar-git if you prefer
+    eww               # or eww-git if you want bleeding edge
+  )
+fi
 
-# Use a COPR Example:
-#
-# dnf5 -y copr enable ublue-os/staging
-# dnf5 -y install package
-# Disable COPRs so they don't end up enabled on the final image:
-# dnf5 -y copr disable ublue-os/staging
+# Common packages you listed (from that COPR when available; otherwise Fedora/RPM Fusion)
+COMMON_PKGS=(
+  xdg-desktop-portal-hyprland
+  hyprland-contrib
+  hyprpaper
+  hyprpicker
+  hypridle
+  hyprlock
+  hyprsunset
+  hyprpolkitagent
+  hyprsysteminfo
+  hyprland-autoname-workspaces
+  hyprshot
+  satty
+  aylurs-gtk-shell
+  aylurs-gtk-shell2
+  hyprpanel
+  cliphist
+  nwg-clipman
+  swww
+  waypaper
+  hyprnome
+  hyprdim
+  swaylock-effects
+  pyprland
+  mpvpaper
+  uwsm
+  qt6ct-kde
+)
 
-#### Example for enabling a System Unit File
+# Install everything
+dnf5 install -y "${HYPR_PKGS[@]}" "${COMMON_PKGS[@]}"
 
-systemctl enable podman.socket
+# Keep SDDM, but default to Hyprland
+install -d /etc/sddm.conf.d
+cat > /etc/sddm.conf.d/10-hyprland.conf <<'EOF'
+[General]
+Session=hyprland.desktop
+
+[Wayland]
+EnableWayland=true
+CompositorCommand=
+EOF
+
+systemctl enable podman.socket || true
+# If you really want to avoid shipping the COPR enabled in the final image, uncomment:
+# dnf5 -y copr disable solopasha/hyprland || true
